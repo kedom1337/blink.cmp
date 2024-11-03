@@ -77,6 +77,7 @@ function autocomplete.setup()
     min_width = autocmp_config.min_width,
     max_height = autocmp_config.max_height,
     border = autocmp_config.border,
+    winblend = autocmp_config.winblend,
     winhighlight = autocmp_config.winhighlight,
     cursorline = false,
     scrolloff = autocmp_config.scrolloff,
@@ -140,9 +141,14 @@ function autocomplete.open_with_items(context, items)
   vim.iter(autocomplete.event_targets.on_open):each(function(callback) callback() end)
 
   if not autocomplete.auto_show then return end
-  autocomplete.win:open()
 
+  autocomplete.win:open()
   autocomplete.update_position(context)
+
+  -- it's possible for the window to close after updating the position
+  -- if there was nowhere to place the window
+  if not autocomplete.win:is_open() then return end
+
   autocomplete.set_has_selected(autocmp_config.selection == 'preselect')
 
   -- todo: some logic to maintain the selection if the user moved the cursor?
@@ -153,9 +159,11 @@ end
 
 function autocomplete.open()
   if autocomplete.win:is_open() then return end
-  vim.iter(autocomplete.event_targets.on_open):each(function(callback) callback() end)
+
   autocomplete.win:open()
   autocomplete.set_has_selected(autocmp_config.selection == 'preselect')
+
+  vim.iter(autocomplete.event_targets.on_open):each(function(callback) callback() end)
 end
 
 function autocomplete.close()
@@ -196,7 +204,11 @@ function autocomplete.update_position(context)
   local cursor_col = vim.api.nvim_win_get_cursor(0)[2]
   local col = context.bounds.start_col - cursor_col - (context.bounds.length == 0 and 0 or 1)
   local row = pos.direction == 's' and 1 or -pos.height - border_size.vertical
-  vim.api.nvim_win_set_config(winnr, { relative = 'cursor', row = row, col = col })
+  vim.api.nvim_win_set_config(winnr, {
+    relative = 'cursor',
+    row = row,
+    col = col - (vim.tbl_contains({ 'minimal', 'reversed' }, autocmp_config.draw) and 1 or 0),
+  })
   vim.api.nvim_win_set_height(winnr, pos.height)
 
   for _, callback in ipairs(autocomplete.event_targets.on_position_update) do
@@ -384,6 +396,7 @@ function autocomplete.draw_item_reversed(ctx)
     {
       ctx.label,
       ctx.kind == 'Snippet' and '~' or nil,
+      (ctx.item.labelDetails and ctx.item.labelDetails.detail) and ctx.item.labelDetails.detail or '',
       fill = true,
       hl_group = ctx.deprecated and 'BlinkCmpLabelDeprecated' or 'BlinkCmpLabel',
       max_width = 50,
@@ -407,6 +420,7 @@ function autocomplete.draw_item_minimal(ctx)
     {
       ctx.label,
       ctx.kind == 'Snippet' and '~' or nil,
+      (ctx.item.labelDetails and ctx.item.labelDetails.detail) and ctx.item.labelDetails.detail or '',
       fill = true,
       hl_group = ctx.deprecated and 'BlinkCmpLabelDeprecated' or 'BlinkCmpLabel',
       max_width = 50,

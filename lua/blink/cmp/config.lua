@@ -18,6 +18,7 @@
 --- | table<string, blink.cmp.KeymapCommand[]> Table of keys => commands[]
 --- | 'default' mappings similar to built-in completion
 --- | 'super-tab' mappings similar to vscode (tab to accept, arrow keys to navigate)
+--- | 'enter' mappings similar to 'super-tab' but with 'enter' to accept
 
 --- @class blink.cmp.AcceptConfig
 --- @field create_undo_point? boolean Create an undo point when accepting a completion item
@@ -67,8 +68,8 @@
 --- @field enabled_providers? string[] | fun(ctx?: blink.cmp.Context): string[]
 ---
 --- @class blink.cmp.SourceProviderConfig
---- @field name string
---- @field module string
+--- @field name? string
+--- @field module? string
 --- @field enabled? boolean | fun(ctx?: blink.cmp.Context): boolean
 --- @field opts? table
 --- @field transform_items? fun(ctx: blink.cmp.Context, items: blink.cmp.CompletionItem[]): blink.cmp.CompletionItem[]
@@ -115,6 +116,7 @@
 --- @field direction_priority? ("n" | "s")[]
 --- @field auto_show? boolean
 --- @field selection? "preselect" | "manual" | "auto_insert"
+--- @field winblend? number
 --- @field winhighlight? string
 --- @field scrolloff? number
 --- @field draw? 'simple' | 'reversed' | 'minimal' | blink.cmp.CompletionDrawFn
@@ -140,6 +142,7 @@
 --- @field auto_show? boolean
 --- @field auto_show_delay_ms? number Delay before showing the documentation window
 --- @field update_delay_ms? number Delay before updating the documentation window
+--- @field winblend? number
 --- @field winhighlight? string
 
 --- @class blink.cmp.SignatureHelpConfig
@@ -147,6 +150,7 @@
 --- @field max_width? number
 --- @field max_height? number
 --- @field border? blink.cmp.WindowBorder
+--- @field winblend? number
 --- @field winhighlight? string
 --- @field direction_priority? ("n" | "s")[]
 
@@ -362,6 +366,7 @@ local config = {
       min_width = 15,
       max_height = 10,
       border = 'none',
+      winblend = 0,
       winhighlight = 'Normal:BlinkCmpMenu,FloatBorder:BlinkCmpMenuBorder,CursorLine:BlinkCmpMenuSelection,Search:None',
       -- keep the cursor X lines away from the top/bottom of the window
       scrolloff = 2,
@@ -393,9 +398,10 @@ local config = {
     },
     documentation = {
       min_width = 10,
-      max_width = 60,
+      max_width = 80,
       max_height = 20,
       border = 'padded',
+      winblend = 0,
       winhighlight = 'Normal:BlinkCmpDoc,FloatBorder:BlinkCmpDocBorder,CursorLine:BlinkCmpDocCursorLine,Search:None',
       -- which directions to show the documentation window,
       -- for each of the possible autocomplete window directions,
@@ -414,6 +420,7 @@ local config = {
       max_width = 100,
       max_height = 10,
       border = 'padded',
+      winblend = 0,
       winhighlight = 'Normal:BlinkCmpSignatureHelp,FloatBorder:BlinkCmpSignatureHelpBorder',
 
       -- which directions to show the window,
@@ -435,7 +442,7 @@ local config = {
 
   -- set to 'mono' for 'Nerd Font Mono' or 'normal' for 'Nerd Font'
   -- adjusts spacing to ensure icons are aligned
-  nerd_font_variant = 'normal',
+  nerd_font_variant = 'mono',
 
   -- don't show completions or signature help for these filetypes. Keymaps are also disabled.
   blocked_filetypes = {},
